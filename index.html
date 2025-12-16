@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -10,22 +12,32 @@
       box-sizing: border-box;
       font-family: 'Press Start 2P', cursive;
     }
+    body {
+      margin: 0;
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
   </style>
 </head>
 <body>
-  <!-- red container div -->
-  <div style="position: relative; display: inline-block">
-    <!-- smaller red container div -->
+  <!-- Game Container -->
+  <div style="position: relative; display: inline-block;">
+    <!-- Health Bars and Timer -->
     <div
+      id="healthBarsContainer"
       style="
         position: absolute;
-        display: flex;
+        display: none;
         width: 100%;
         align-items: center;
         padding: 20px;
+        z-index: 10;
       "
     >
-      <!-- player health -->
+      <!-- Player Health -->
       <div
         style="
           position: relative;
@@ -51,7 +63,7 @@
         ></div>
       </div>
 
-      <!-- timer -->
+      <!-- Timer -->
       <div
         id="timer"
         style="
@@ -66,9 +78,10 @@
           border: 4px solid white;
         "
       >
-        10
+        60
       </div>
-      <!-- enemy health -->
+
+      <!-- Player 2 Health -->
       <div
         style="
           position: relative;
@@ -80,7 +93,7 @@
       >
         <div style="background-color: red; height: 30px"></div>
         <div
-          id="enemyHealth"
+          id="player2Health"
           style="
             position: absolute;
             background: #818cf8;
@@ -91,8 +104,31 @@
           "
         ></div>
       </div>
-      <div></div>
     </div>
+
+    <!-- Countdown Overlay -->
+    <div
+      id="startCountdown"
+      style="
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 64px;
+        text-shadow: 0 0 10px black;
+        z-index: 20;
+        background: rgba(0, 0, 0, 0.5);
+      "
+    >
+      3
+    </div>
+
+    <!-- Game Over Overlay -->
     <div
       id="displayText"
       style="
@@ -105,11 +141,15 @@
         bottom: 0;
         left: 0;
         display: none;
+        font-size: 48px;
+        text-shadow: 0 0 10px black;
+        z-index: 30;
+        background: rgba(0, 0, 0, 0.7);
       "
     >
-      Tie
     </div>
-    <canvas></canvas>
+
+    <canvas id="gameCanvas"></canvas>
   </div>
 
   <script
@@ -118,7 +158,7 @@
     crossorigin="anonymous"
     referrerpolicy="no-referrer"
   ></script>
-  <script src="js/utils.js"></script>
-  <script src="js/classes.js"></script>
-  <script src="index.js"></script>
+
+  <script type="module" src="src/index.js"></script>
 </body>
+</html>

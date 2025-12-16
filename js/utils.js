@@ -1,3 +1,5 @@
+let postFightDialogueShown = false
+
 function rectangularCollision({ rectangle1, rectangle2 }) {
   return (
     rectangle1.attackBox.position.x + rectangle1.attackBox.width >=
@@ -18,7 +20,36 @@ function determineWinner({ player, enemy, timerId }) {
   } else if (player.health > enemy.health) {
     document.querySelector('#displayText').innerHTML = 'Player 1 Wins'
   } else if (player.health < enemy.health) {
-    document.querySelector('#displayText').innerHTML = 'Player 2 Wins'
+    document.querySelector('#displayText').innerHTML = 'Computer Wins'
+  }
+
+  // Trigger post-fight acknowledgement dialogue after a short delay
+  try {
+    if (!postFightDialogueShown) {
+      postFightDialogueShown = true
+
+      const postFight =
+        player.health > enemy.health
+          ? [
+              { speaker: 'cpu', text: 'Tch... impressive.' },
+              { speaker: 'p1', text: 'Good fight. You held your own.' },
+              { speaker: 'cpu', text: "Next time, I won't hold back." }
+            ]
+          : [
+              { speaker: 'p1', text: "Ngh... you're strong." },
+              { speaker: 'cpu', text: 'You fought well.' },
+              { speaker: 'p1', text: "Let's meet again on better terms." }
+            ]
+
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          const evt = new CustomEvent('startPostFightDialogue', { detail: { lines: postFight } })
+          window.dispatchEvent(evt)
+        }
+      }, 700)
+    }
+  } catch (e) {
+    // no-op
   }
 }
 
