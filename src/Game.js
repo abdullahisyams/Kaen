@@ -68,9 +68,11 @@ export class Game {
   }
 
   async preloadAudio() {
-    // Preload all music files and common sound effects
+    // Preload title screen audio first before any other audio
+    await audioManager.preload('./sfx/title screen.mp3', 'music', { loop: true })
+    
+    // Then preload all other music files and common sound effects
     await audioManager.preloadAll([
-      { path: './sfx/title screen.mp3', type: 'music', options: { loop: true } },
       { path: './sfx/stage&character select.mp3', type: 'music', options: { loop: true } },
       { path: './sfx/battles.mp3', type: 'music', options: { loop: true } },
       // Common sound effects
