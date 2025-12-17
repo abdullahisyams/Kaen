@@ -1347,8 +1347,8 @@ export class CutsceneScene {
     // Start with netherland background (flipped)
     this.background = new Sprite({
       position: { x: 0, y: 0 },
-      imageSrc: './img/netherland.png',
-      imageFlippedSrc: './img/flipped netherland.png' // Use pre-flipped image
+      //imageSrc: './img/netherland.png',
+      imageSrc: './img/flipped netherland.png' // Use pre-flipped image
     })
     this.background.flipped = true
     
@@ -2333,8 +2333,8 @@ export class CutsceneScene {
         this.cutsceneState = 'kaenRunningFlipped'
         this.background = new Sprite({
           position: { x: 0, y: 0 },
-          imageSrc: './img/snowy everest.png',
-          imageFlippedSrc: './img/flipped snowy everest.png' // Use pre-flipped image
+          //imageSrc: './img/snowy everest.png',
+          imageSrc: './img/flipped snowy everest.png' // Use pre-flipped image
         })
         this.background.flipped = true
 

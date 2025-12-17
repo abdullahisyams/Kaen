@@ -13,11 +13,8 @@ export class CreditsScene {
     
     // Load title image
     this.titleImage = new Image()
-    this.titleImage.src = './img/title.png'
+    this.titleImage.src = './img/credit title.png'
     this.titleImageLoaded = false
-    this.titleImage.onload = () => {
-      this.titleImageLoaded = true
-    }
     
     // Credit scene music
     this.creditMusic = new Audio('./sfx/credit scene.mp3')
@@ -41,7 +38,7 @@ export class CreditsScene {
     // Credits content structure
     this.credits = [
       { type: 'title', text: null, image: true}, // Title image
-      { type: 'spacer', height: 120 },
+      { type: 'spacer', height: 0 },
       { type: 'section', text: 'A Game by', size: 24 },
       { type: 'spacer', height: 20 },
       { type: 'name', text: 'Wolforiz', size: 32 },
@@ -84,13 +81,30 @@ export class CreditsScene {
     this.totalHeight = 0
     this.credits.forEach(item => {
       if (item.type === 'title' && item.image) {
-        this.totalHeight += 200 // Space for title image
+        // Will be updated when image loads, use placeholder for now
+        this.totalHeight += 200 // Placeholder space for title image
       } else if (item.type === 'spacer') {
         this.totalHeight += item.height
       } else {
         this.totalHeight += 40 // Default line height
       }
     })
+    
+    // Update total height when title image loads
+    this.titleImage.onload = () => {
+      this.titleImageLoaded = true
+      // Recalculate total height with actual image height
+      this.totalHeight = 0
+      this.credits.forEach(item => {
+        if (item.type === 'title' && item.image) {
+          this.totalHeight += this.titleImage.height
+        } else if (item.type === 'spacer') {
+          this.totalHeight += item.height
+        } else {
+          this.totalHeight += 40
+        }
+      })
+    }
   }
 
   update() {
@@ -169,14 +183,15 @@ export class CreditsScene {
     const centerX = CANVAS_WIDTH / 2
     
     this.credits.forEach(item => {
-      // Adjust threshold for title image (300px tall)
-      const topThreshold = item.type === 'title' && item.image ? -350 : -50
+      // Adjust threshold for title image
+      const titleImageHeight = this.titleImageLoaded ? this.titleImage.height : 200
+      const topThreshold = item.type === 'title' && item.image ? -(titleImageHeight + 50) : -50
       if (currentY > CANVAS_HEIGHT + 50 || currentY < topThreshold) {
         // Skip drawing if outside viewport
         if (item.type === 'spacer') {
           currentY += item.height
         } else if (item.type === 'title' && item.image) {
-          currentY += 200
+          currentY += this.titleImageLoaded ? this.titleImage.height : 200
         } else {
           currentY += 40
         }
@@ -184,15 +199,13 @@ export class CreditsScene {
       }
       
       if (item.type === 'title' && item.image) {
-        // Draw title image
+        // Draw title image at natural size
         if (this.titleImageLoaded) {
-          const imageWidth = 600
-          const imageHeight = 300
-          const imageX = centerX - imageWidth / 2
+          const imageX = centerX - this.titleImage.width / 2
           const imageY = currentY
-          c.drawImage(this.titleImage, imageX, imageY, imageWidth, imageHeight)
+          c.drawImage(this.titleImage, imageX, imageY)
         }
-        currentY += 200
+        currentY += this.titleImageLoaded ? this.titleImage.height : 200
       } else if (item.type === 'spacer') {
         currentY += item.height
       } else if (item.type === 'section') {
