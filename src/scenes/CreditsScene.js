@@ -4,6 +4,7 @@ import { getContext } from '../utils/context.js'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../constants/game.js'
 import { getKeys, wasKeyJustPressed, updateInput } from '../engine/InputHandler.js'
 import { imageManager } from '../utils/ImageManager.js'
+import { audioManager } from '../utils/AudioManager.js'
 
 export class CreditsScene {
   constructor(onComplete = null) {
@@ -16,10 +17,8 @@ export class CreditsScene {
     // Just get it directly - no loading checks needed since it's preloaded
     this.titleImage = imageManager.getImage('./img/credit title.png')
     
-    // Credit scene music
-    this.creditMusic = new Audio('./sfx/credit scene.mp3')
-    this.creditMusic.loop = true
-    this.creditMusic.volume = 0.7
+    // Credit scene music (preloaded by LoadingScene)
+    this.creditMusic = audioManager.getAudio('./sfx/credit scene.mp3', 'music', { loop: true })
     this.creditMusicPlaying = false
     
     // Try to play music (may be blocked by autoplay policy)
