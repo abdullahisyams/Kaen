@@ -1,5 +1,6 @@
 // Base Sprite Class
 import { getContext } from '../utils/context.js'
+import { imageManager } from '../utils/ImageManager.js'
 
 export class Sprite {
   constructor({
@@ -13,12 +14,11 @@ export class Sprite {
     this.position = position
     this.width = 50
     this.height = 150
-    this.image = new Image()
-    this.image.src = imageSrc
+    // Use ImageManager to get cached image or create new one
+    this.image = imageManager.getImage(imageSrc)
     this.imageFlipped = null
     if (imageFlippedSrc) {
-      this.imageFlipped = new Image()
-      this.imageFlipped.src = imageFlippedSrc
+      this.imageFlipped = imageManager.getImage(imageFlippedSrc)
     }
     this.scale = scale
     this.framesMax = framesMax

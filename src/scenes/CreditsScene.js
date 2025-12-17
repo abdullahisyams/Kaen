@@ -3,6 +3,7 @@ import { Sprite } from '../entities/Sprite.js'
 import { getContext } from '../utils/context.js'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../constants/game.js'
 import { getKeys, wasKeyJustPressed, updateInput } from '../engine/InputHandler.js'
+import { imageManager } from '../utils/ImageManager.js'
 
 export class CreditsScene {
   constructor(onComplete = null) {
@@ -11,10 +12,27 @@ export class CreditsScene {
     this.scrollSpeed = 1.5 // Pixels per frame
     this.paused = false
     
-    // Load title image
-    this.titleImage = new Image()
-    this.titleImage.src = './img/credit title.png'
-    this.titleImageLoaded = false
+    // Load title image from ImageManager (should be preloaded)
+    this.titleImage = imageManager.getImage('./img/credit title.png')
+    this.titleImageLoaded = this.titleImage.complete && this.titleImage.width > 0 && this.titleImage.height > 0
+    
+    // If not loaded yet, wait for it
+    if (!this.titleImageLoaded) {
+      this.titleImage.onload = () => {
+        this.titleImageLoaded = true
+        // Recalculate total height with actual image height
+        this.totalHeight = 0
+        this.credits.forEach(item => {
+          if (item.type === 'title' && item.image) {
+            this.totalHeight += this.titleImage.height
+          } else if (item.type === 'spacer') {
+            this.totalHeight += item.height
+          } else {
+            this.totalHeight += 40
+          }
+        })
+      }
+    }
     
     // Credit scene music
     this.creditMusic = new Audio('./sfx/credit scene.mp3')
@@ -90,10 +108,8 @@ export class CreditsScene {
       }
     })
     
-    // Update total height when title image loads
-    this.titleImage.onload = () => {
-      this.titleImageLoaded = true
-      // Recalculate total height with actual image height
+    // If image is already loaded, calculate height immediately
+    if (this.titleImageLoaded) {
       this.totalHeight = 0
       this.credits.forEach(item => {
         if (item.type === 'title' && item.image) {
