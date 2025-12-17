@@ -13,6 +13,7 @@ import { getKeys, wasKeyJustPressed, updateInput } from '../engine/InputHandler.
 import { characterData, CHARACTERS } from '../config/characters.js'
 import { AIController } from '../engine/AIController.js'
 import { AI_DIFFICULTY } from '../constants/ai.js'
+import { audioManager } from '../utils/AudioManager.js'
 
 export class BattleScene {
   constructor(player1Character, player2Character, background = 'background', gameMode = null, difficulty = null, isBossFight = false) {
@@ -42,37 +43,12 @@ export class BattleScene {
     this.background = null
     this.shop = null
     
-    // Projectile sound effects for Kaen, Kenji, and Wakasa
-    this.projKkwSound = new Audio('./sfx/proj kkw.wav')
-    this.projKkwSound.volume = 0.7
-    
-    // Basic attack sound effect for Kaen, Kenji, and Wakasa
-    this.basicAttackSound = new Audio('./sfx/basic.wav')
-    this.basicAttackSound.volume = 0.7
-    
-    // Ultimate sound effects for chakra projectiles
-    this.ultKaenSound = new Audio('./sfx/ult kaen.wav')
-    this.ultKaenSound.volume = 0.7
-    this.ultWakasaSound = new Audio('./sfx/ult wakasa.wav')
-    this.ultWakasaSound.volume = 0.7
-    this.ultKenjiSound = new Audio('./sfx/ult kenji.wav')
-    this.ultKenjiSound.volume = 0.7
-    this.ultIsabellaSound = new Audio('./sfx/ult isabella.wav')
-    this.ultIsabellaSound.volume = 0.7
-    this.ultSerenaSound = new Audio('./sfx/ult serena.wav')
-    this.ultSerenaSound.volume = 0.7
-    
-    // Projectile sound effects for Isabella and Serena
-    this.projIsabellaSound = new Audio('./sfx/proj isabella.wav')
-    this.projIsabellaSound.volume = 0.7
-    this.projSerenaSound = new Audio('./sfx/proj serena.wav')
-    this.projSerenaSound.volume = 0.7
+    // Sound effects will be loaded from AudioManager when needed
+    // No need to pre-create them here - AudioManager handles caching
     
     // Battles music - only for VS Computer mode (vsComputer), NOT for boss fights
     if ((this.gameMode === 'vsComputer' || this.gameMode === 'twoPlayer') && !this.isBossFight) {
-      this.battlesMusic = new Audio('./sfx/battles.mp3')
-      this.battlesMusic.loop = true
-      this.battlesMusic.volume = 0.3
+      this.battlesMusic = audioManager.getAudio('./sfx/battles.mp3', 'music', { loop: true })
       this.battlesMusicPlaying = false
       
       // Try to play music on initialization
@@ -240,8 +216,9 @@ export class BattleScene {
       if (this.player1Character === CHARACTERS.KAEN || 
           this.player1Character === CHARACTERS.KENJI || 
           this.player1Character === CHARACTERS.WAKASA) {
-        this.basicAttackSound.currentTime = 0
-        this.basicAttackSound.play().catch(() => {})
+        const sound = audioManager.getAudio('./sfx/basic.wav', 'sfx')
+        sound.currentTime = 0
+        sound.play().catch(() => {})
       }
     }
     
@@ -252,8 +229,9 @@ export class BattleScene {
       if (this.player2Character === CHARACTERS.KAEN || 
           this.player2Character === CHARACTERS.KENJI || 
           this.player2Character === CHARACTERS.WAKASA) {
-        this.basicAttackSound.currentTime = 0
-        this.basicAttackSound.play().catch(() => {})
+        const sound = audioManager.getAudio('./sfx/basic.wav', 'sfx')
+        sound.currentTime = 0
+        sound.play().catch(() => {})
       }
     }
     
@@ -496,17 +474,20 @@ export class BattleScene {
       if (this.player1.pendingProjectile === FighterAttackType.RANGED) {
         const player1Data = characterData[this.player1Character]
         // Play projectile sound based on character
+        let projSoundPath = null
         if (this.player1Character === CHARACTERS.KAEN || 
             this.player1Character === CHARACTERS.KENJI || 
             this.player1Character === CHARACTERS.WAKASA) {
-          this.projKkwSound.currentTime = 0
-          this.projKkwSound.play().catch(() => {})
+          projSoundPath = './sfx/proj kkw.wav'
         } else if (this.player1Character === CHARACTERS.ISABELLA) {
-          this.projIsabellaSound.currentTime = 0
-          this.projIsabellaSound.play().catch(() => {})
+          projSoundPath = './sfx/proj isabella.wav'
         } else if (this.player1Character === CHARACTERS.SERENA) {
-          this.projSerenaSound.currentTime = 0
-          this.projSerenaSound.play().catch(() => {})
+          projSoundPath = './sfx/proj serena.wav'
+        }
+        if (projSoundPath) {
+          const sound = audioManager.getAudio(projSoundPath, 'sfx')
+          sound.currentTime = 0
+          sound.play().catch(() => {})
         }
         this.projectiles.player1.push(
           new SlashProjectile({
@@ -522,21 +503,22 @@ export class BattleScene {
         const player1Data = characterData[this.player1Character]
         
         // Play ultimate sound for chakra projectiles based on character
+        let ultSoundPath = null
         if (this.player1Character === CHARACTERS.KAEN) {
-          this.ultKaenSound.currentTime = 0
-          this.ultKaenSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult kaen.wav'
         } else if (this.player1Character === CHARACTERS.WAKASA) {
-          this.ultWakasaSound.currentTime = 0
-          this.ultWakasaSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult wakasa.wav'
         } else if (this.player1Character === CHARACTERS.KENJI) {
-          this.ultKenjiSound.currentTime = 0
-          this.ultKenjiSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult kenji.wav'
         } else if (this.player1Character === CHARACTERS.ISABELLA) {
-          this.ultIsabellaSound.currentTime = 0
-          this.ultIsabellaSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult isabella.wav'
         } else if (this.player1Character === CHARACTERS.SERENA) {
-          this.ultSerenaSound.currentTime = 0
-          this.ultSerenaSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult serena.wav'
+        }
+        if (ultSoundPath) {
+          const sound = audioManager.getAudio(ultSoundPath, 'sfx')
+          sound.currentTime = 0
+          sound.play().catch(() => {})
         }
         
         this.chakraProjectiles.player1.push(
@@ -576,17 +558,20 @@ export class BattleScene {
       if (this.player2.pendingProjectile === FighterAttackType.RANGED) {
         const player2Data = characterData[this.player2Character]
         // Play projectile sound based on character
+        let projSoundPath = null
         if (this.player2Character === CHARACTERS.KAEN || 
             this.player2Character === CHARACTERS.KENJI || 
             this.player2Character === CHARACTERS.WAKASA) {
-          this.projKkwSound.currentTime = 0
-          this.projKkwSound.play().catch(() => {})
+          projSoundPath = './sfx/proj kkw.wav'
         } else if (this.player2Character === CHARACTERS.ISABELLA) {
-          this.projIsabellaSound.currentTime = 0
-          this.projIsabellaSound.play().catch(() => {})
+          projSoundPath = './sfx/proj isabella.wav'
         } else if (this.player2Character === CHARACTERS.SERENA) {
-          this.projSerenaSound.currentTime = 0
-          this.projSerenaSound.play().catch(() => {})
+          projSoundPath = './sfx/proj serena.wav'
+        }
+        if (projSoundPath) {
+          const sound = audioManager.getAudio(projSoundPath, 'sfx')
+          sound.currentTime = 0
+          sound.play().catch(() => {})
         }
         this.projectiles.player2.push(
           new SlashProjectile({
@@ -602,21 +587,22 @@ export class BattleScene {
         const player2Data = characterData[this.player2Character]
         
         // Play ultimate sound for chakra projectiles based on character
+        let ultSoundPath = null
         if (this.player2Character === CHARACTERS.KAEN) {
-          this.ultKaenSound.currentTime = 0
-          this.ultKaenSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult kaen.wav'
         } else if (this.player2Character === CHARACTERS.WAKASA) {
-          this.ultWakasaSound.currentTime = 0
-          this.ultWakasaSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult wakasa.wav'
         } else if (this.player2Character === CHARACTERS.KENJI) {
-          this.ultKenjiSound.currentTime = 0
-          this.ultKenjiSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult kenji.wav'
         } else if (this.player2Character === CHARACTERS.ISABELLA) {
-          this.ultIsabellaSound.currentTime = 0
-          this.ultIsabellaSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult isabella.wav'
         } else if (this.player2Character === CHARACTERS.SERENA) {
-          this.ultSerenaSound.currentTime = 0
-          this.ultSerenaSound.play().catch(() => {})
+          ultSoundPath = './sfx/ult serena.wav'
+        }
+        if (ultSoundPath) {
+          const sound = audioManager.getAudio(ultSoundPath, 'sfx')
+          sound.currentTime = 0
+          sound.play().catch(() => {})
         }
         
         this.chakraProjectiles.player2.push(

@@ -5,6 +5,7 @@ export class Sprite {
   constructor({
     position,
     imageSrc,
+    imageFlippedSrc = null, // Optional pre-flipped image path
     scale = 1,
     framesMax = 1,
     offset = { x: 0, y: 0 }
@@ -14,6 +15,11 @@ export class Sprite {
     this.height = 150
     this.image = new Image()
     this.image.src = imageSrc
+    this.imageFlipped = null
+    if (imageFlippedSrc) {
+      this.imageFlipped = new Image()
+      this.imageFlipped.src = imageFlippedSrc
+    }
     this.scale = scale
     this.framesMax = framesMax
     this.framesCurrent = 0
@@ -27,37 +33,60 @@ export class Sprite {
     const c = getContext()
     if (!c) return
 
+    // Determine which image to use (pre-flipped if available and needed, otherwise use transform)
+    const useFlippedImage = this.flipped && this.imageFlipped && 
+                           this.imageFlipped.complete && 
+                           this.imageFlipped.width > 0 && 
+                           this.imageFlipped.height > 0
+    const imageToUse = useFlippedImage ? this.imageFlipped : this.image
+
     // Don't draw if image hasn't loaded yet
-    if (!this.image.complete || this.image.width === 0 || this.image.height === 0) {
+    if (!imageToUse.complete || imageToUse.width === 0 || imageToUse.height === 0) {
       return
     }
 
-    const sx = this.framesCurrent * (this.image.width / this.framesMax)
-    const sWidth = this.image.width / this.framesMax
-    const sHeight = this.image.height
+    const sx = this.framesCurrent * (imageToUse.width / this.framesMax)
+    const sWidth = imageToUse.width / this.framesMax
+    const sHeight = imageToUse.height
     const dx = this.position.x - this.offset.x
     const dy = this.position.y - this.offset.y
-    const dWidth = (this.image.width / this.framesMax) * this.scale
-    const dHeight = this.image.height * this.scale
+    const dWidth = (imageToUse.width / this.framesMax) * this.scale
+    const dHeight = imageToUse.height * this.scale
 
-    c.save()
-    if (this.flipped) {
-      c.translate(dx + dWidth / 2, dy + dHeight / 2)
-      c.scale(-1, 1)
-      c.translate(-(dx + dWidth / 2), -(dy + dHeight / 2))
+    // If we have a pre-flipped image, use it directly (no transforms needed = better performance)
+    if (useFlippedImage) {
+      c.drawImage(
+        imageToUse,
+        sx,
+        0,
+        sWidth,
+        sHeight,
+        dx,
+        dy,
+        dWidth,
+        dHeight
+      )
+    } else {
+      // Fallback to canvas transforms for sprites that don't have pre-flipped versions (like fighters)
+      c.save()
+      if (this.flipped) {
+        c.translate(dx + dWidth / 2, dy + dHeight / 2)
+        c.scale(-1, 1)
+        c.translate(-(dx + dWidth / 2), -(dy + dHeight / 2))
+      }
+      c.drawImage(
+        imageToUse,
+        sx,
+        0,
+        sWidth,
+        sHeight,
+        dx,
+        dy,
+        dWidth,
+        dHeight
+      )
+      c.restore()
     }
-    c.drawImage(
-      this.image,
-      sx,
-      0,
-      sWidth,
-      sHeight,
-      dx,
-      dy,
-      dWidth,
-      dHeight
-    )
-    c.restore()
   }
 
   animateFrames() {

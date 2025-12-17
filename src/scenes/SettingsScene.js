@@ -4,6 +4,7 @@ import { getContext } from '../utils/context.js'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../constants/game.js'
 import { getKeys, wasKeyJustPressed, updateInput } from '../engine/InputHandler.js'
 import { PLAYER1_CONTROLS, PLAYER2_CONTROLS } from '../constants/controls.js'
+import { audioManager } from '../utils/AudioManager.js'
 
 export class SettingsScene {
   constructor(onBack = null) {
@@ -12,10 +13,10 @@ export class SettingsScene {
     this.previousSection = this.currentSection
     this.selectedVolumeSlider = 'master' // 'master', 'music', or 'sfx'
     
-    // Volume settings (0.0 to 1.0)
-    this.masterVolume = 1.0
-    this.musicVolume = 0.7
-    this.sfxVolume = 0.7
+    // Volume settings (0.0 to 1.0) - sync with AudioManager
+    this.masterVolume = audioManager.masterVolume
+    this.musicVolume = audioManager.musicVolume
+    this.sfxVolume = audioManager.sfxVolume
     
     // Background
     this.background = new Sprite({
@@ -23,57 +24,36 @@ export class SettingsScene {
       imageSrc: './img/forest.png'
     })
     
-    // Sound effects
-    this.selectSound = new Audio('./sfx/select.wav')
-    this.selectSound.volume = 0.8
-    this.selectedSound = new Audio('./sfx/selected.wav')
-    this.selectedSound.volume = 0.7
+    // Sound effects will be loaded from AudioManager when needed
     
-    // Load saved settings from localStorage if available
+    // Load saved settings from AudioManager
     this.loadSettings()
   }
   
   loadSettings() {
-    try {
-      const savedMasterVolume = localStorage.getItem('masterVolume')
-      const savedMusicVolume = localStorage.getItem('musicVolume')
-      const savedSfxVolume = localStorage.getItem('sfxVolume')
-      
-      if (savedMasterVolume !== null) {
-        this.masterVolume = parseFloat(savedMasterVolume)
-      }
-      if (savedMusicVolume !== null) {
-        this.musicVolume = parseFloat(savedMusicVolume)
-      }
-      if (savedSfxVolume !== null) {
-        this.sfxVolume = parseFloat(savedSfxVolume)
-      }
-    } catch (e) {
-      // If localStorage is not available, use defaults
-    }
+    // Settings are loaded from AudioManager, just sync local values
+    this.masterVolume = audioManager.masterVolume
+    this.musicVolume = audioManager.musicVolume
+    this.sfxVolume = audioManager.sfxVolume
   }
   
   saveSettings() {
-    try {
-      localStorage.setItem('masterVolume', this.masterVolume.toString())
-      localStorage.setItem('musicVolume', this.musicVolume.toString())
-      localStorage.setItem('sfxVolume', this.sfxVolume.toString())
-    } catch (e) {
-      // If localStorage is not available, ignore
-    }
+    // Settings are saved by AudioManager, no need to do it here
   }
   
   updateVolume(volumeType, delta) {
     let volume = this[volumeType]
     volume = Math.max(0.0, Math.min(1.0, volume + delta))
     this[volumeType] = volume
-    this.saveSettings()
+    
+    // Update AudioManager
+    audioManager.updateVolume(volumeType, volume)
     
     // Play test sound for SFX volume
     if (volumeType === 'sfxVolume') {
-      this.selectSound.volume = this.sfxVolume * this.masterVolume
-      this.selectSound.currentTime = 0
-      this.selectSound.play().catch(() => {})
+      const sound = audioManager.getAudio('./sfx/select.wav', 'sfx')
+      sound.currentTime = 0
+      sound.play().catch(() => {})
     }
   }
 
@@ -93,8 +73,9 @@ export class SettingsScene {
       } else {
         this.currentSection = 'volume'
       }
-      this.selectSound.currentTime = 0
-      this.selectSound.play().catch(() => {})
+      const sound = audioManager.getAudio('./sfx/select.wav', 'sfx')
+      sound.currentTime = 0
+      sound.play().catch(() => {})
     }
     
     // Volume controls
@@ -106,8 +87,9 @@ export class SettingsScene {
         const currentIndex = sliders.indexOf(this.selectedVolumeSlider)
         const prevIndex = (currentIndex - 1 + sliders.length) % sliders.length
         this.selectedVolumeSlider = sliders[prevIndex]
-        this.selectSound.currentTime = 0
-        this.selectSound.play().catch(() => {})
+      const sound = audioManager.getAudio('./sfx/select.wav', 'sfx')
+      sound.currentTime = 0
+      sound.play().catch(() => {})
       }
       
       if (wasKeyJustPressed('s') || wasKeyJustPressed('S') || wasKeyJustPressed('ArrowDown')) {
@@ -116,8 +98,9 @@ export class SettingsScene {
         const currentIndex = sliders.indexOf(this.selectedVolumeSlider)
         const nextIndex = (currentIndex + 1) % sliders.length
         this.selectedVolumeSlider = sliders[nextIndex]
-        this.selectSound.currentTime = 0
-        this.selectSound.play().catch(() => {})
+      const sound = audioManager.getAudio('./sfx/select.wav', 'sfx')
+      sound.currentTime = 0
+      sound.play().catch(() => {})
       }
       
       // Adjust volume with A/D or Arrow Left/Right

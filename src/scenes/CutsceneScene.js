@@ -1347,9 +1347,10 @@ export class CutsceneScene {
     // Start with netherland background (flipped)
     this.background = new Sprite({
       position: { x: 0, y: 0 },
-      imageSrc: './img/netherland.png'
+      imageSrc: './img/netherland.png',
+      imageFlippedSrc: './img/flipped netherland.png' // Use pre-flipped image
     })
-    this.background.flipped = true // Flip horizontally
+    this.background.flipped = true
     
     // Cutscene 8 sound effect
     this.cutscene8Music = new Audio('./sfx/cutscene 8.mp3')
@@ -2332,9 +2333,10 @@ export class CutsceneScene {
         this.cutsceneState = 'kaenRunningFlipped'
         this.background = new Sprite({
           position: { x: 0, y: 0 },
-          imageSrc: './img/snowy everest.png'
+          imageSrc: './img/snowy everest.png',
+          imageFlippedSrc: './img/flipped snowy everest.png' // Use pre-flipped image
         })
-        this.background.flipped = true // Flip horizontally
+        this.background.flipped = true
 
         // Spawn Kaen from left
         const kaenData = characterData[CHARACTERS.KAEN]

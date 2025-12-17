@@ -16,6 +16,7 @@ import { CHARACTERS } from './config/characters.js'
 import { registerKeyboardEvents, getKeys } from './engine/InputHandler.js'
 import { getContext } from './utils/context.js'
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BATTLE_TIMER_START } from './constants/game.js'
+import { audioManager } from './utils/AudioManager.js'
 
 // Initialize input handler on module load
 registerKeyboardEvents()
@@ -49,33 +50,34 @@ export class Game {
     this.currentCutsceneMusic = null // Store reference to current cutscene music (for cutscenes 4, 6, 8, 9)
     this.currentCutsceneMusicPlaying = false // Track if cutscene music is playing
     
-    // Title screen music
-    this.titleMusic = new Audio('./sfx/title screen.mp3')
-    this.titleMusic.loop = true
-    this.titleMusic.volume = 0.7
+    // Title screen music (will use AudioManager)
+    this.titleMusic = null
     this.titleMusicPlaying = false
-    this.titleMusicLoaded = false
     
-    // Preload the music
-    this.titleMusic.addEventListener('canplaythrough', () => {
-      this.titleMusicLoaded = true
-    })
-    this.titleMusic.load()
-    
-    // Stage & Character select music
-    this.stageSelectMusic = new Audio('./sfx/stage&character select.mp3')
-    this.stageSelectMusic.loop = true
-    this.stageSelectMusic.volume = 0.7
+    // Stage & Character select music (will use AudioManager)
+    this.stageSelectMusic = null
     this.stageSelectMusicPlaying = false
     
-    // Preload the music
-    this.stageSelectMusic.addEventListener('canplaythrough', () => {
-      // Music loaded
+    // Preload audio files (runs in background, doesn't block initialization)
+    this.preloadAudio().catch(err => {
+      console.warn('Audio preloading failed:', err)
     })
-    this.stageSelectMusic.load()
     
     // Initialize game with menu select
     this.initialize()
+  }
+
+  async preloadAudio() {
+    // Preload all music files and common sound effects
+    await audioManager.preloadAll([
+      { path: './sfx/title screen.mp3', type: 'music', options: { loop: true } },
+      { path: './sfx/stage&character select.mp3', type: 'music', options: { loop: true } },
+      { path: './sfx/battles.mp3', type: 'music', options: { loop: true } },
+      // Common sound effects
+      { path: './sfx/select.wav', type: 'sfx' },
+      { path: './sfx/basic.wav', type: 'sfx' },
+      { path: './sfx/chakra charge.wav', type: 'sfx' }
+    ])
   }
 
   initialize() {
@@ -102,6 +104,7 @@ export class Game {
     // Try to start title screen music (may be blocked by browser autoplay policy)
     // If blocked, it will start on first user interaction in update()
     if (!this.titleMusicPlaying) {
+      this.titleMusic = audioManager.getAudio('./sfx/title screen.mp3', 'music', { loop: true })
       const playPromise = this.titleMusic.play()
       if (playPromise !== undefined) {
         playPromise
@@ -167,20 +170,15 @@ export class Game {
   
   showBackgroundSelect() {
     // Stop title music and start stage select music
-    if (this.titleMusicPlaying) {
+    if (this.titleMusicPlaying && this.titleMusic) {
       this.titleMusic.pause()
       this.titleMusic.currentTime = 0
       this.titleMusicPlaying = false
     }
     
-    // Set volume to match character select (0.4) for consistency
-    if (this.stageSelectMusicPlaying) {
-      this.stageSelectMusic.volume = 0.4 // Match character select volume
-    }
-    
     // Start stage select music if not already playing
     if (!this.stageSelectMusicPlaying) {
-      this.stageSelectMusic.volume = 0.4 // Match character select volume
+      this.stageSelectMusic = audioManager.getAudio('./sfx/stage&character select.mp3', 'music', { loop: true })
       const playPromise = this.stageSelectMusic.play()
       if (playPromise !== undefined) {
         playPromise
@@ -200,7 +198,7 @@ export class Game {
       this.showCharacterSelect()
     }, () => {
       // Back button callback - stop stage select music, resume title music
-      if (this.stageSelectMusicPlaying) {
+      if (this.stageSelectMusicPlaying && this.stageSelectMusic) {
         this.stageSelectMusic.pause()
         this.stageSelectMusic.currentTime = 0
         this.stageSelectMusicPlaying = false
@@ -208,6 +206,9 @@ export class Game {
       
       // Resume title music
       if (!this.titleMusicPlaying) {
+        if (!this.titleMusic) {
+          this.titleMusic = audioManager.getAudio('./sfx/title screen.mp3', 'music', { loop: true })
+        }
         const playPromise = this.titleMusic.play()
         if (playPromise !== undefined) {
           playPromise
@@ -230,15 +231,11 @@ export class Game {
   }
   
   showCharacterSelect() {
-    // Lower volume for character select
-    if (this.stageSelectMusicPlaying) {
-      this.stageSelectMusic.volume = 0.4 // Lower volume (from 0.7 to 0.4)
-    }
-    
     // Keep stage select music playing (don't stop it)
     // If music isn't playing, try to start it (in case we came from a different path)
     if (!this.stageSelectMusicPlaying) {
-      this.stageSelectMusic.volume = 0.4 // Set lower volume before starting
+      this.stageSelectMusic = audioManager.getAudio('./sfx/stage&character select.mp3', 'music', { loop: true })
+      // AudioManager handles volume, but we can adjust if needed
       const playPromise = this.stageSelectMusic.play()
       if (playPromise !== undefined) {
         playPromise
@@ -889,6 +886,9 @@ export class Game {
     if (!this.titleMusicPlaying) {
       if (sceneType === 'TitleScene' || sceneType === 'MenuSelectScene' || sceneType === 'SceneSelectorScene') {
         if (hasUserInteraction) {
+          if (!this.titleMusic) {
+            this.titleMusic = audioManager.getAudio('./sfx/title screen.mp3', 'music', { loop: true })
+          }
           const playPromise = this.titleMusic.play()
           if (playPromise !== undefined) {
             playPromise
@@ -907,6 +907,9 @@ export class Game {
     if (!this.stageSelectMusicPlaying) {
       if (sceneType === 'BackgroundSelectScene' || sceneType === 'CharacterSelectScene') {
         if (hasUserInteraction) {
+          if (!this.stageSelectMusic) {
+            this.stageSelectMusic = audioManager.getAudio('./sfx/stage&character select.mp3', 'music', { loop: true })
+          }
           const playPromise = this.stageSelectMusic.play()
           if (playPromise !== undefined) {
             playPromise

@@ -16,6 +16,7 @@ import {
 } from '../constants/fighter.js'
 import { CANVAS_HEIGHT } from '../constants/game.js'
 import { getContext } from '../utils/context.js'
+import { audioManager } from '../utils/AudioManager.js'
 
 export class Fighter extends Sprite {
   constructor({
@@ -62,9 +63,7 @@ export class Fighter extends Sprite {
     this.isCharging = false
     this.chakraChargeTimer = null
     
-    // Chakra charge sound effect
-    this.chakraChargeSound = new Audio('./sfx/chakra charge.wav')
-    this.chakraChargeSound.volume = 0.7
+    // Chakra charge sound effect will be loaded from AudioManager when needed
     
     // State machine
     this.currentState = FighterState.IDLE
@@ -521,8 +520,9 @@ export class Fighter extends Sprite {
     if (this.isCharging || this.chakra >= FIGHTER_MAX_CHAKRA || this.dead) return
     
     // Play chakra charge sound
-    this.chakraChargeSound.currentTime = 0
-    this.chakraChargeSound.play().catch(() => {})
+    const sound = audioManager.getAudio('./sfx/chakra charge.wav', 'sfx')
+    sound.currentTime = 0
+    sound.play().catch(() => {})
     
     this.isCharging = true
     this.changeState(FighterState.CHARGING)
