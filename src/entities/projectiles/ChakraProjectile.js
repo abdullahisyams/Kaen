@@ -1,6 +1,7 @@
 // Chakra Projectile Class
 import { getContext } from '../../utils/context.js'
 import { CANVAS_WIDTH } from '../../constants/game.js'
+import { imageManager } from '../../utils/ImageManager.js'
 
 export class ChakraProjectile {
   constructor({ position, velocity, direction, height, chakraProjectileSprite }) {
@@ -31,10 +32,9 @@ export class ChakraProjectile {
     this.frameTimer = 0
     this.frameInterval = 5
     
-    // Load all images
+    // Load all images (use ImageManager for cached images)
     this.imagePaths.forEach((path) => {
-      const img = new Image()
-      img.src = path
+      const img = imageManager.getImage(path)
       this.images.push(img)
     })
     

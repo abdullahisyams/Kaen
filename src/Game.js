@@ -17,7 +17,6 @@ import { registerKeyboardEvents, getKeys } from './engine/InputHandler.js'
 import { getContext } from './utils/context.js'
 import { CANVAS_WIDTH, CANVAS_HEIGHT, BATTLE_TIMER_START } from './constants/game.js'
 import { audioManager } from './utils/AudioManager.js'
-import { imageManager } from './utils/ImageManager.js'
 
 // Initialize input handler on module load
 registerKeyboardEvents()
@@ -59,44 +58,9 @@ export class Game {
     this.stageSelectMusic = null
     this.stageSelectMusicPlaying = false
     
-    // Preload audio and images (runs in background, doesn't block initialization)
-    this.preloadAssets().catch(err => {
-      console.warn('Asset preloading failed:', err)
-    })
-    
+    // Assets are already preloaded by LoadingScene before game starts
     // Initialize game with menu select
     this.initialize()
-  }
-
-  async preloadAssets() {
-    // Preload title screen audio first before any other audio
-    await audioManager.preload('./sfx/title screen.mp3', 'music', { loop: true })
-    
-    // Preload critical images in parallel with audio
-    await Promise.all([
-      // Preload background images
-      imageManager.preloadAll([
-        './img/forest.png',
-        './img/shop.png',
-        './img/netherland.png',
-        './img/flipped netherland.png',
-        './img/snowy everest.png',
-        './img/flipped snowy everest.png',
-        './img/nether throne.png',
-        './img/nether portal.png',
-        './img/romasna.png',
-        './img/credit title.png'
-      ]),
-      // Then preload all other music files and common sound effects
-      audioManager.preloadAll([
-        { path: './sfx/stage&character select.mp3', type: 'music', options: { loop: true } },
-        { path: './sfx/battles.mp3', type: 'music', options: { loop: true } },
-        // Common sound effects
-        { path: './sfx/select.wav', type: 'sfx' },
-        { path: './sfx/basic.wav', type: 'sfx' },
-        { path: './sfx/chakra charge.wav', type: 'sfx' }
-      ])
-    ])
   }
 
   initialize() {

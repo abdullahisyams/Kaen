@@ -1,6 +1,7 @@
 // Slash Projectile Class
 import { getContext } from '../../utils/context.js'
 import { CANVAS_WIDTH } from '../../constants/game.js'
+import { imageManager } from '../../utils/ImageManager.js'
 
 export class SlashProjectile {
   constructor({ position, velocity, direction, projectileSprite }) {
@@ -15,8 +16,8 @@ export class SlashProjectile {
     this.yOffset = projectileSprite?.yOffset !== undefined ? projectileSprite.yOffset : -120 // Default Y offset
     
     // Load projectile sprite sheet
-    this.image = new Image()
-    this.image.src = imageSrc
+    // Use ImageManager for cached images
+    this.image = imageManager.getImage(imageSrc)
     this.framesMax = framesMax
     this.framesCurrent = 0
     this.framesElapsed = 0

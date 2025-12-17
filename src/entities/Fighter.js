@@ -17,6 +17,7 @@ import {
 import { CANVAS_HEIGHT } from '../constants/game.js'
 import { getContext } from '../utils/context.js'
 import { audioManager } from '../utils/AudioManager.js'
+import { imageManager } from '../utils/ImageManager.js'
 
 export class Fighter extends Sprite {
   constructor({
@@ -73,11 +74,10 @@ export class Fighter extends Sprite {
     this.sprites = sprites || {}
     this.dead = false
     
-    // Load all sprite images if sprites are provided
+    // Load all sprite images if sprites are provided (use ImageManager for cached images)
     if (this.sprites && Object.keys(this.sprites).length > 0) {
       for (const sprite in this.sprites) {
-        this.sprites[sprite].image = new Image()
-        this.sprites[sprite].image.src = this.sprites[sprite].imageSrc
+        this.sprites[sprite].image = imageManager.getImage(this.sprites[sprite].imageSrc)
       }
     }
     
@@ -616,10 +616,9 @@ export class Fighter extends Sprite {
   // Set sprites after initialization (for character selection)
   setSprites(sprites) {
     this.sprites = sprites
-    // Load all sprite images
+    // Load all sprite images (use ImageManager for cached images)
     for (const sprite in this.sprites) {
-      this.sprites[sprite].image = new Image()
-      this.sprites[sprite].image.src = this.sprites[sprite].imageSrc
+      this.sprites[sprite].image = imageManager.getImage(this.sprites[sprite].imageSrc)
     }
     // Switch to idle sprite
     if (this.sprites.idle) {
