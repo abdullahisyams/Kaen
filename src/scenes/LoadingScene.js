@@ -57,8 +57,10 @@ export class LoadingScene {
   collectAllImages() {
     const images = []
     
-    // Background images
+    // Background images - credit title is highest priority
     images.push(
+      './img/credit title.png', // Load first - critical for credits scene
+      './img/title.png',
       './img/forest.png',
       './img/shop.png',
       './img/netherland.png',
@@ -67,9 +69,7 @@ export class LoadingScene {
       './img/flipped snowy everest.png',
       './img/nether throne.png',
       './img/nether portal.png',
-      './img/romasna.png',
-      './img/title.png',
-      './img/credit title.png'
+      './img/romasna.png'
     )
     
     // Collect all character sprites
