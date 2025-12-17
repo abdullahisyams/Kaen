@@ -12,32 +12,14 @@ export class CreditsScene {
     this.scrollSpeed = 1.5 // Pixels per frame
     this.paused = false
     
-    // Load title image from ImageManager (should be preloaded)
+    // Load title image from ImageManager (should be fully preloaded in LoadingScene)
+    // No processing needed - image is ready to use immediately
     this.titleImage = imageManager.getImage('./img/credit title.png')
     
-    // Use natural dimensions if available, otherwise use placeholder
-    // The image will render progressively as it loads
+    // Image should already be loaded from LoadingScene, but use natural dimensions
+    // which are available immediately if preloaded correctly
     const imageHeight = (this.titleImage.naturalHeight || this.titleImage.height || 200)
     this.titleImageLoaded = this.titleImage.complete && (this.titleImage.naturalWidth > 0 || this.titleImage.width > 0)
-    
-    // Update total height when image loads (if not already loaded)
-    if (!this.titleImageLoaded) {
-      this.titleImage.onload = () => {
-        this.titleImageLoaded = true
-        // Recalculate total height with actual image height
-        const actualHeight = this.titleImage.naturalHeight || this.titleImage.height || 200
-        this.totalHeight = 0
-        this.credits.forEach(item => {
-          if (item.type === 'title' && item.image) {
-            this.totalHeight += actualHeight
-          } else if (item.type === 'spacer') {
-            this.totalHeight += item.height
-          } else {
-            this.totalHeight += 40
-          }
-        })
-      }
-    }
     
     // Credit scene music
     this.creditMusic = new Audio('./sfx/credit scene.mp3')
@@ -206,17 +188,15 @@ export class CreditsScene {
       }
       
       if (item.type === 'title' && item.image) {
-        // Draw title image at natural size - always draw, browser will render as it loads
-        // Use natural dimensions if available, otherwise use placeholder
+        // Draw title image at natural size - image is preloaded and ready
+        // No processing needed, just draw it as-is
         const imageWidth = this.titleImage.naturalWidth || this.titleImage.width || 600
         const imageHeight = this.titleImage.naturalHeight || this.titleImage.height || 200
         const imageX = centerX - imageWidth / 2
         const imageY = currentY
         
-        // Always try to draw - browser handles progressive loading
-        if (this.titleImage.complete || this.titleImage.naturalWidth > 0) {
-          c.drawImage(this.titleImage, imageX, imageY, imageWidth, imageHeight)
-        }
+        // Image is preloaded in LoadingScene, so it's ready to draw immediately
+        c.drawImage(this.titleImage, imageX, imageY, imageWidth, imageHeight)
         currentY += imageHeight
       } else if (item.type === 'spacer') {
         currentY += item.height

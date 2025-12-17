@@ -172,7 +172,22 @@ export class LoadingScene {
       const batch = imagePaths.slice(i, i + batchSize)
       const promises = batch.map(async (path) => {
         try {
-          await imageManager.preload(path)
+          const img = await imageManager.preload(path)
+          // For credit title image, ensure it's fully loaded and processed
+          if (path === './img/credit title.png') {
+            // Wait for image to be completely loaded
+            if (!img.complete || img.naturalWidth === 0) {
+              await new Promise((resolve) => {
+                if (img.complete && img.naturalWidth > 0) {
+                  resolve()
+                } else {
+                  img.onload = () => resolve()
+                  img.onerror = () => resolve() // Resolve even on error to not block
+                }
+              })
+            }
+            // Image is now fully loaded and ready - no processing needed in CreditsScene
+          }
           this.loaded++
           this.status = `Loading images... (${this.loaded}/${this.total})`
         } catch (error) {
