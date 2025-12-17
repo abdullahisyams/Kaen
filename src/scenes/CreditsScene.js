@@ -4,7 +4,6 @@ import { getContext } from '../utils/context.js'
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../constants/game.js'
 import { getKeys, wasKeyJustPressed, updateInput } from '../engine/InputHandler.js'
 import { imageManager } from '../utils/ImageManager.js'
-import { audioManager } from '../utils/AudioManager.js'
 
 export class CreditsScene {
   constructor(onComplete = null) {
@@ -12,33 +11,30 @@ export class CreditsScene {
     this.scrollY = CANVAS_HEIGHT // Start from bottom
     this.scrollSpeed = 1.5 // Pixels per frame
     this.paused = false
-    this.titleImage = null
-    this.titleImageLoaded = false
-    this.initialized = false
     
-    // Initialize asynchronously to wait for image
-    this.initialize()
-  }
-
-  async initialize() {
-    // Wait for the image to be ready (should be preloaded, but ensure it's loaded)
-    try {
-      this.titleImage = await imageManager.waitForImage('./img/credit title.png')
-      this.titleImageLoaded = this.titleImage.complete && this.titleImage.width > 0 && this.titleImage.height > 0
-    } catch (error) {
-      console.warn('Failed to get credit title image:', error)
-      // Create fallback image
-      this.titleImage = imageManager.getImage('./img/credit title.png')
-      this.titleImageLoaded = false
+    // Get title image from ImageManager (should be preloaded by LoadingScene)
+    // Just get it directly - no loading checks needed since it's preloaded
+    this.titleImage = imageManager.getImage('./img/credit title.png')
+    
+    // Credit scene music
+    this.creditMusic = new Audio('./sfx/credit scene.mp3')
+    this.creditMusic.loop = true
+    this.creditMusic.volume = 0.7
+    this.creditMusicPlaying = false
+    
+    // Try to play music (may be blocked by autoplay policy)
+    const playPromise = this.creditMusic.play()
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          this.creditMusicPlaying = true
+        })
+        .catch(() => {
+          // Autoplay was prevented, will try again on user interaction
+          this.creditMusicPlaying = false
+        })
     }
     
-    // Now initialize the rest
-    this.setupCredits()
-    this.setupMusic()
-    this.initialized = true
-  }
-
-  setupCredits() {
     // Credits content structure
     this.credits = [
       { type: 'title', text: null, image: true}, // Title image
@@ -81,15 +77,15 @@ export class CreditsScene {
       { type: 'spacer', height: 100 }
     ]
     
-    // Calculate total height
-    this.recalculateTotalHeight()
-  }
-
-  recalculateTotalHeight() {
+    // Calculate total height - use actual image height if available, otherwise use placeholder
     this.totalHeight = 0
     this.credits.forEach(item => {
       if (item.type === 'title' && item.image) {
-        this.totalHeight += this.titleImageLoaded && this.titleImage ? this.titleImage.height : 200
+        // Use actual image height if loaded, otherwise use placeholder
+        const imageHeight = (this.titleImage.complete && this.titleImage.height > 0) 
+          ? this.titleImage.height 
+          : 200
+        this.totalHeight += imageHeight
       } else if (item.type === 'spacer') {
         this.totalHeight += item.height
       } else {
@@ -98,32 +94,7 @@ export class CreditsScene {
     })
   }
 
-  setupMusic() {
-    // Credit scene music
-    this.creditMusic = audioManager.getAudio('./sfx/credit scene.mp3', 'music', { loop: true })
-    this.creditMusic.volume = 0.7
-    this.creditMusicPlaying = false
-    
-    // Try to play music (may be blocked by autoplay policy)
-    const playPromise = this.creditMusic.play()
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          this.creditMusicPlaying = true
-        })
-        .catch(() => {
-          // Autoplay was prevented, will try again on user interaction
-          this.creditMusicPlaying = false
-        })
-    }
-  }
-
   update() {
-    // Don't update until initialized
-    if (!this.initialized) {
-      return
-    }
-
     const keys = getKeys()
     
     // Try to play music if not playing (for autoplay policy)
@@ -190,18 +161,6 @@ export class CreditsScene {
     const c = getContext()
     if (!c) return
     
-    // Don't draw until initialized
-    if (!this.initialized) {
-      // Draw loading message
-      c.fillStyle = 'black'
-      c.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
-      c.fillStyle = 'white'
-      c.font = '24px "Press Start 2P"'
-      c.textAlign = 'center'
-      c.fillText('Loading credits...', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2)
-      return
-    }
-    
     // Draw black background
     c.fillStyle = 'black'
     c.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
@@ -211,8 +170,10 @@ export class CreditsScene {
     const centerX = CANVAS_WIDTH / 2
     
     this.credits.forEach(item => {
-      // Adjust threshold for title image
-      const titleImageHeight = this.titleImageLoaded && this.titleImage ? this.titleImage.height : 200
+      // Get actual image height if available
+      const titleImageHeight = (this.titleImage.complete && this.titleImage.height > 0) 
+        ? this.titleImage.height 
+        : 200
       const topThreshold = item.type === 'title' && item.image ? -(titleImageHeight + 50) : -50
       if (currentY > CANVAS_HEIGHT + 50 || currentY < topThreshold) {
         // Skip drawing if outside viewport
@@ -227,13 +188,13 @@ export class CreditsScene {
       }
       
       if (item.type === 'title' && item.image) {
-        // Draw title image at natural size
-        if (this.titleImageLoaded && this.titleImage) {
-          const imageX = centerX - this.titleImage.width / 2
-          const imageY = currentY
-          c.drawImage(this.titleImage, imageX, imageY)
-        }
-        currentY += this.titleImageLoaded && this.titleImage ? this.titleImage.height : 200
+        // Draw title image at natural size - just draw it directly
+        // Since it's preloaded by LoadingScene, it should be ready immediately
+        // If not loaded yet, browser will handle it gracefully
+        const imageX = centerX - (this.titleImage.width || 400) / 2
+        const imageY = currentY
+        c.drawImage(this.titleImage, imageX, imageY)
+        currentY += titleImageHeight
       } else if (item.type === 'spacer') {
         currentY += item.height
       } else if (item.type === 'section') {
