@@ -20,15 +20,22 @@ export class LoadingScene {
     try {
       // Collect all assets to load
       const allImages = this.collectAllImages()
-      const allAudio = this.collectAllAudio()
+      const audioGroups = this.collectAllAudio()
       
-      this.total = allImages.length + allAudio.length
+      // Calculate total
+      this.total = allImages.length + audioGroups.all.length
       this.loaded = 0
       
-      // Load images and audio in parallel
+      // Start loading images in parallel batches
+      const imageLoadingPromise = this.loadImagesInBatches(allImages, 10) // Load 10 images at a time
+      
+      // Load audio in priority order with parallel batches
+      const audioLoadingPromise = this.loadAudioInPriorityBatches(audioGroups)
+      
+      // Wait for both to complete
       await Promise.all([
-        this.loadImages(allImages),
-        this.loadAudio(allAudio)
+        imageLoadingPromise,
+        audioLoadingPromise
       ])
       
       // Loading complete
@@ -108,71 +115,107 @@ export class LoadingScene {
   }
 
   collectAllAudio() {
-    const audioFiles = []
+    // Priority-based audio collection
+    // Critical audio (loaded first)
+    const criticalAudio = [
+      { path: './sfx/title screen.mp3', type: 'music', options: { loop: true }, priority: 1 },
+      { path: './sfx/select.wav', type: 'sfx', priority: 1 },
+      { path: './sfx/selected.wav', type: 'sfx', priority: 1 },
+      { path: './sfx/basic.wav', type: 'sfx', priority: 1 },
+      { path: './sfx/chakra charge.wav', type: 'sfx', priority: 1 }
+    ]
     
-    // Music files
-    audioFiles.push(
-      { path: './sfx/title screen.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/stage&character select.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/battles.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/credit scene.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/prologue.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 1.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 2.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 3.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 4.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 5.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 6.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 7.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 8.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 9.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/cutscene 10.mp3', type: 'music', options: { loop: true } },
-      { path: './sfx/pvp fin.mp3', type: 'music', options: { loop: true } }
-    )
+    // High priority audio (loaded second)
+    const highPriorityAudio = [
+      { path: './sfx/stage&character select.mp3', type: 'music', options: { loop: true }, priority: 2 },
+      { path: './sfx/battles.mp3', type: 'music', options: { loop: true }, priority: 2 },
+      { path: './sfx/proj kkw.wav', type: 'sfx', priority: 2 },
+      { path: './sfx/proj isabella.wav', type: 'sfx', priority: 2 },
+      { path: './sfx/proj serena.wav', type: 'sfx', priority: 2 },
+      { path: './sfx/ult kaen.wav', type: 'sfx', priority: 2 },
+      { path: './sfx/ult wakasa.wav', type: 'sfx', priority: 2 },
+      { path: './sfx/ult kenji.wav', type: 'sfx', priority: 2 },
+      { path: './sfx/ult isabella.wav', type: 'sfx', priority: 2 },
+      { path: './sfx/ult serena.wav', type: 'sfx', priority: 2 },
+      { path: './sfx/yoo.wav', type: 'sfx', priority: 2 }
+    ]
     
-    // Sound effects
-    audioFiles.push(
-      { path: './sfx/select.wav', type: 'sfx' },
-      { path: './sfx/selected.wav', type: 'sfx' },
-      { path: './sfx/basic.wav', type: 'sfx' },
-      { path: './sfx/chakra charge.wav', type: 'sfx' },
-      { path: './sfx/proj kkw.wav', type: 'sfx' },
-      { path: './sfx/proj isabella.wav', type: 'sfx' },
-      { path: './sfx/proj serena.wav', type: 'sfx' },
-      { path: './sfx/ult kaen.wav', type: 'sfx' },
-      { path: './sfx/ult wakasa.wav', type: 'sfx' },
-      { path: './sfx/ult kenji.wav', type: 'sfx' },
-      { path: './sfx/ult isabella.wav', type: 'sfx' },
-      { path: './sfx/ult serena.wav', type: 'sfx' },
-      { path: './sfx/yoo.wav', type: 'sfx' }
-    )
+    // Lower priority audio (loaded last)
+    const lowerPriorityAudio = [
+      { path: './sfx/credit scene.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/prologue.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 1.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 2.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 3.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 4.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 5.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 6.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 7.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 8.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 9.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/cutscene 10.mp3', type: 'music', options: { loop: true }, priority: 3 },
+      { path: './sfx/pvp fin.mp3', type: 'music', options: { loop: true }, priority: 3 }
+    ]
     
-    return audioFiles
-  }
-
-  async loadImages(imagePaths) {
-    for (const path of imagePaths) {
-      try {
-        await imageManager.preload(path)
-        this.loaded++
-        this.status = `Loading images... (${this.loaded}/${this.total})`
-      } catch (error) {
-        console.warn(`Failed to load image: ${path}`, error)
-        this.loaded++
-      }
+    // Return organized by priority
+    return {
+      critical: criticalAudio,
+      high: highPriorityAudio,
+      low: lowerPriorityAudio,
+      all: [...criticalAudio, ...highPriorityAudio, ...lowerPriorityAudio]
     }
   }
 
-  async loadAudio(audioFiles) {
-    for (const audioFile of audioFiles) {
-      try {
-        await audioManager.preload(audioFile.path, audioFile.type, audioFile.options || {})
-        this.loaded++
-        this.status = `Loading audio... (${this.loaded}/${this.total})`
-      } catch (error) {
-        console.warn(`Failed to load audio: ${audioFile.path}`, error)
-        this.loaded++
-      }
+  // Load images in parallel batches for better performance
+  async loadImagesInBatches(imagePaths, batchSize = 10) {
+    for (let i = 0; i < imagePaths.length; i += batchSize) {
+      const batch = imagePaths.slice(i, i + batchSize)
+      const promises = batch.map(async (path) => {
+        try {
+          await imageManager.preload(path)
+          this.loaded++
+          this.status = `Loading images... (${this.loaded}/${this.total})`
+        } catch (error) {
+          console.warn(`Failed to load image: ${path}`, error)
+          this.loaded++
+        }
+      })
+      await Promise.all(promises)
+    }
+  }
+
+  // Load audio in priority batches (critical first, then high, then low)
+  async loadAudioInPriorityBatches(audioGroups) {
+    const batchSize = 8 // Load 8 audio files in parallel
+    
+    // Load critical audio first
+    this.status = 'Loading critical audio...'
+    await this.loadAudioBatch(audioGroups.critical, batchSize)
+    
+    // Load high priority audio
+    this.status = 'Loading high priority audio...'
+    await this.loadAudioBatch(audioGroups.high, batchSize)
+    
+    // Load lower priority audio
+    this.status = 'Loading background audio...'
+    await this.loadAudioBatch(audioGroups.low, batchSize)
+  }
+
+  // Load a batch of audio files in parallel
+  async loadAudioBatch(audioFiles, batchSize = 8) {
+    for (let i = 0; i < audioFiles.length; i += batchSize) {
+      const batch = audioFiles.slice(i, i + batchSize)
+      const promises = batch.map(async (audioFile) => {
+        try {
+          await audioManager.preload(audioFile.path, audioFile.type, audioFile.options || {})
+          this.loaded++
+          this.status = `Loading audio... (${this.loaded}/${this.total})`
+        } catch (error) {
+          console.warn(`Failed to load audio: ${audioFile.path}`, error)
+          this.loaded++
+        }
+      })
+      await Promise.all(promises)
     }
   }
 
