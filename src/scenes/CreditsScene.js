@@ -14,22 +14,17 @@ export class CreditsScene {
     
     // Load title image from ImageManager (should be preloaded)
     this.titleImage = imageManager.getImage('./img/credit title.png')
+    this.titleImageLoaded = this.titleImage.complete && this.titleImage.width > 0 && this.titleImage.height > 0
     
-    // Use natural dimensions if available, otherwise use placeholder
-    // The image will render progressively as it loads
-    const imageHeight = (this.titleImage.naturalHeight || this.titleImage.height || 200)
-    this.titleImageLoaded = this.titleImage.complete && (this.titleImage.naturalWidth > 0 || this.titleImage.width > 0)
-    
-    // Update total height when image loads (if not already loaded)
+    // If not loaded yet, wait for it
     if (!this.titleImageLoaded) {
       this.titleImage.onload = () => {
         this.titleImageLoaded = true
         // Recalculate total height with actual image height
-        const actualHeight = this.titleImage.naturalHeight || this.titleImage.height || 200
         this.totalHeight = 0
         this.credits.forEach(item => {
           if (item.type === 'title' && item.image) {
-            this.totalHeight += actualHeight
+            this.totalHeight += this.titleImage.height
           } else if (item.type === 'spacer') {
             this.totalHeight += item.height
           } else {
@@ -100,18 +95,32 @@ export class CreditsScene {
       { type: 'spacer', height: 100 }
     ]
     
-    // Calculate total height using actual or placeholder dimensions
-    const titleImageHeight = (this.titleImage.naturalHeight || this.titleImage.height || 200)
+    // Calculate total height
     this.totalHeight = 0
     this.credits.forEach(item => {
       if (item.type === 'title' && item.image) {
-        this.totalHeight += titleImageHeight
+        // Will be updated when image loads, use placeholder for now
+        this.totalHeight += 200 // Placeholder space for title image
       } else if (item.type === 'spacer') {
         this.totalHeight += item.height
       } else {
         this.totalHeight += 40 // Default line height
       }
     })
+    
+    // If image is already loaded, calculate height immediately
+    if (this.titleImageLoaded) {
+      this.totalHeight = 0
+      this.credits.forEach(item => {
+        if (item.type === 'title' && item.image) {
+          this.totalHeight += this.titleImage.height
+        } else if (item.type === 'spacer') {
+          this.totalHeight += item.height
+        } else {
+          this.totalHeight += 40
+        }
+      })
+    }
   }
 
   update() {
@@ -191,14 +200,14 @@ export class CreditsScene {
     
     this.credits.forEach(item => {
       // Adjust threshold for title image
-      const titleImageHeight = (this.titleImage.naturalHeight || this.titleImage.height || 200)
+      const titleImageHeight = this.titleImageLoaded ? this.titleImage.height : 200
       const topThreshold = item.type === 'title' && item.image ? -(titleImageHeight + 50) : -50
       if (currentY > CANVAS_HEIGHT + 50 || currentY < topThreshold) {
         // Skip drawing if outside viewport
         if (item.type === 'spacer') {
           currentY += item.height
         } else if (item.type === 'title' && item.image) {
-          currentY += titleImageHeight
+          currentY += this.titleImageLoaded ? this.titleImage.height : 200
         } else {
           currentY += 40
         }
@@ -206,18 +215,13 @@ export class CreditsScene {
       }
       
       if (item.type === 'title' && item.image) {
-        // Draw title image at natural size - always draw, browser will render as it loads
-        // Use natural dimensions if available, otherwise use placeholder
-        const imageWidth = this.titleImage.naturalWidth || this.titleImage.width || 600
-        const imageHeight = this.titleImage.naturalHeight || this.titleImage.height || 200
-        const imageX = centerX - imageWidth / 2
-        const imageY = currentY
-        
-        // Always try to draw - browser handles progressive loading
-        if (this.titleImage.complete || this.titleImage.naturalWidth > 0) {
-          c.drawImage(this.titleImage, imageX, imageY, imageWidth, imageHeight)
+        // Draw title image at natural size
+        if (this.titleImageLoaded) {
+          const imageX = centerX - this.titleImage.width / 2
+          const imageY = currentY
+          c.drawImage(this.titleImage, imageX, imageY)
         }
-        currentY += imageHeight
+        currentY += this.titleImageLoaded ? this.titleImage.height : 200
       } else if (item.type === 'spacer') {
         currentY += item.height
       } else if (item.type === 'section') {
